@@ -154,6 +154,8 @@ var free_cx=["makeup105","makeup117","mmakeup00","fmakeup01","fmakeup02","fmakeu
 var can_buy={};
 var T={}; // sprite-type
 
+
+
 function process_game_data()
 {
 	G.quests={};
@@ -495,7 +497,6 @@ function resolve_deferred(name,data)
 {
 	if(!data) data={success:true};
 	if(data.success!==false && !data.failed) data.success=true;
-	if(is_sdk) console.log(["resolve",name,data]);
 	// if(name=="attack" && (!deferreds.attack || !deferreds.attack.length) && deferreds.heal && deferreds.heal.length) name="heal"; // cupid logic [23/09/19]
 	// if(name=="heal" && (!deferreds.heal || !deferreds.heal.length) && deferreds.attack && deferreds.attack.length) name="attack"; // ~impossible to perfectly predict the call/result
 	if(!deferreds[name] || !deferreds[name].length) return console.error("Weird resolve_deferred issue: "+name),console.log("If you emit socket events manually, ignore this message");
@@ -653,7 +654,7 @@ function distance(_a, _b, in_check) {
 	const a_y = get_y(_a)
 	const b_x = get_x(_b)
 	const b_y = get_y(_b)
-  
+
 	const a_w2 = get_width(_a) / 2
 	const a_h = get_height(_a)
 	const b_w2 = get_width(_b) / 2
@@ -665,7 +666,7 @@ function distance(_a, _b, in_check) {
 	// Check overlap
 	if ((a_x - a_w2) <= (b_x + b_w2)
 		&& (a_x + a_w2) >= (b_x - b_w2)
-		&& (a_y) >= (b_y - b_h) 
+		&& (a_y) >= (b_y - b_h)
 		&& (a_y - a_h) <= (b_y) ) return 0
 
 	// TODO: If one is just a single point, we're computing 8 needless calculations.
@@ -1224,7 +1225,7 @@ function calculate_movex(map, cur_x, cur_y, target_x, target_y) {
 			continue;
 		}
 
-		
+
 		if (going_down) {
 			target_y = min(target_y, y_intersect);
 			max_y = target_y;
@@ -1266,7 +1267,7 @@ function calculate_movex(map, cur_x, cur_y, target_x, target_y) {
 			continue;
 		}
 
-		
+
 		if (going_right) {
 			target_x = min(target_x, x_intersect);
 			max_x = target_x;
@@ -1334,7 +1335,7 @@ function calculate_move(entity,target_x,target_y) // v5, calculate 4 edges, choo
 	m_calculate=true;
 	var map=entity.map,cur_x=get_x(entity),cur_y=get_y(entity);
 	var corners=[[0,0]];
-	var moves=[[target_x,target_y]],x_moves=[]; 
+	var moves=[[target_x,target_y]],x_moves=[];
 	if(entity.base) corners=[[-entity.base.h,entity.base.vn],[entity.base.h,entity.base.vn],[-entity.base.h,-entity.base.v],[entity.base.h,-entity.base.v]];
 	// Test the movement limits of all 4 corners of an entity, and record the [mmx,mmy] at the limit
 	corners.forEach(function(mxy){
@@ -1347,7 +1348,7 @@ function calculate_move(entity,target_x,target_y) // v5, calculate 4 edges, choo
 			var cmove=calculate_movex(G.geometry[map]||{},cur_x+mx,cur_y+my,dx,dy);
 			var cdist=point_distance(cur_x+mx,cur_y+my,cmove.x,cmove.y);
 			// add_log(cdist,"orange");
-			
+
 			mx=cmove.x-mx;
 			my=cmove.y-my;
 			// add_log("mx/y: "+mx+","+my);
@@ -1376,7 +1377,7 @@ function calculate_move(entity,target_x,target_y) // v5, calculate 4 edges, choo
 			// 	move={x:x,y:y};
 			// }
 			var cdist=point_distance(target_x,target_y,x,y);
-			// #IDEA: If the angle difference between intended angle, and move angle is factored in too, the selected movement could be the most natural one [20/07/18] 
+			// #IDEA: If the angle difference between intended angle, and move angle is factored in too, the selected movement could be the most natural one [20/07/18]
 			if(cdist<min)
 			{
 				min=cdist;
@@ -1559,7 +1560,7 @@ function stop_logic(monster)
 			start_moving_element(monster);
 			return;
 		}
-		
+
 		monster.moving=monster.amoving||false;
 		monster.vx=monster.vy=0; // added these 2 lines, as the character can walk outside when setTimeout ticks at 1000ms's [26/07/16]
 		// if(monster.me) console.log(monster.real_x+","+monster.real_y);

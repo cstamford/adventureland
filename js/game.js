@@ -1535,7 +1535,6 @@ function init_socket(args)
 		skill_timeout(data.name,data.ms);
 	});
 	socket.on('game_response',function(data){
-		if(is_sdk) console.log(["game_response",data]);
 		var response=data.response||data;
 		try{
 			var cevent=false,event=false;

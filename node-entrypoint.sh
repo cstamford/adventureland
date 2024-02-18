@@ -18,5 +18,7 @@ fi
 # wait a second for the python stuff to come up
 sleep 5
 
+curl http://localhost:8083/rearm
+
 echo "Starting $1 $2 on port $3"
 node /adventureland/node/server.js $1 $2 $3

@@ -2,103 +2,189 @@ import json
 from config import *
 from functions import *
 
-def signup_or_login_api(**args):
-	#time.sleep(10)
-	self,domain,email,password,only_login,only_signup,mobile=gdmuld(args,"self","domain","email","password","only_login","only_signup","mobile")
-	logging.info("Signup or Login")
-	
-	#jhtmle(self,"Disabled for now"); return
+def signup_or_login_api(**kwargs):
+    self = kwargs.get('self', None)
+    domain = kwargs.get('domain', None)
+    email = "dev@example.com"
+    password = "devPassword123"
 
-	try: email=purify_email(email)
-	except: return jhtmle(self,"Invalid Email")
+    existing_user = get_user(email=email, phrase_check=True)
 
-	if not password:
-		jjson(self,{"type":"eval","code":"$('.passwordui').show()"})
-		jhtmle(self,"No Password Entered")
-		return
+    if not existing_user:
+        signupth=get_signupth()
+        ip=get_ip_info(self)
+        referrer=get_referrer(self,ip)
 
-	existing=get_user(email=email,phrase_check=True)
+        def signup_transaction():
+            markedphrase=get_by_iid("markedphrase|%s"%dgt("email",email))
+            if markedphrase: return False
+            salt=randomStr(20)
+            hpassword=hash_password(password,salt)
+            user=User(name="#%s"%signupth,password=hpassword,email=[email],info=cGG(gold=1000,salt=salt))
+            user.referrer=(referrer and "%s"%referrer.k()) or ""
+            user.info.signupth=signupth
+            user.info.email=email
+            user.info.ip=get_ip(self); user.info.country=get_country(self)
+            user.info.characters=[]; user.info.slots=5
+            user.info.items=[]
+            user.info.everification=randomStr(12)
+            user.info.verified=1
+            auth=get_new_auth(self,user,domain)
+            user.put()
+            mark_phrase(user,"email",email)
+            return user,auth
 
-	if existing and existing.server:
-		if msince(existing.last_online)>15 and msince(gf(existing,"last_auth",really_old))>15: pass # [15/05/22]
-		else: jhtmle(self,"Can't login while inside the bank"); return
-	if not domain.electron and not only_login and not domain.is_sdk: jhtmle(self,"Can't signup on web"); return
-	
-	if existing and not only_signup:
-		if existing.password==hash_password(password,gf(existing,"salt","5")):
-			def login_transaction():
-				user=get_by_iid(existing.k('i'))
-				auth=get_new_auth(self,user,domain)
-				user.put()
-				return user,auth
-			user=ndb.transaction(login_transaction,xg=True,retries=12)
-			if user:
-				user,auth=user
-				set_cookie(self,"auth","%s-%s"%(user.k(),auth))
-				if mobile:
-					return jhtml(self,[{"type":"refresh"}]);
-				jhtml(self,[
-					{"type":"message","message":"Logged In!" },
-					selection_info(self,user,domain),
-					])
-			else:
-				jhtmle(self,"Login Failed. Please Retry Later.")
-			return
-		jjson(self,{"type":"eval","code":"$('.passwordui').show()"})
-		jhtmle(self,"Wrong Password")
-		return
+        user, auth = ndb.transaction(signup_transaction, xg=True, retries=12)
 
-	if not email: return jhtmle(self,"No Email Entered")
+        create_character(user, class_type="merchant", character_name="Seamato")
 
-	if only_login: return jhtmle(self,"Email Not Found In Records")
-	
-	signupth=get_signupth()
-	ip=get_ip_info(self)
-	referrer=get_referrer(self,ip)
+        create_character(user, class_type="ranger", character_name="Shootmato", slots={
+            "ring1": {"name": "dexring", "level": 2},
+            "ring2": {"name": "dexring", "level": 2},
+            "earring1": None,
+            "earring2": None,
+            "belt": {"name": "hpbelt", "level": 2},
+            "mainhand": {"name": "hbow", "level": 6},
+            "offhand": {"name": "quiver", "level": 5},
+            "helmet": {"name": "helmet", "level": 8, "stat_type": "dex"},
+            "chest": {"name": "coat", "level": 8, "stat_type": "dex"},
+            "pants": {"name": "pants", "level": 8, "stat_type": "dex"},
+            "shoes": {"name": "shoes", "level": 8, "stat_type": "dex"},
+            "gloves": {"name": "gloves", "level": 8, "stat_type": "dex"},
+            "amulet": {"name": "hpamulet", "level": 2},
+            "orb": {"name": "orbg", "level": 2},
+            "elixir": {"name": "candypop", "expires": "2024-02-18T11:32:26.022Z", "ex": True},
+            "cape": {"name": "cape", "level": 2, "stat_type": "dex"}
+        })
 
-	if gf(ip,"limit_signups",0)>=3: return jhtmle(self,"Too many signups from this IP. Please wait a couple hours or use a non-public network")
+        create_character(user, class_type="ranger", character_name="Arrowmato", slots={
+            "ring1": {"name": "ringsj", "level": 2},
+            "ring2": {"name": "ringsj", "level": 2},
+            "earring1": None,
+            "earring2": None,
+            "belt": {"name": "hpbelt", "level": 2},
+            "mainhand": {"name": "hbow", "level": 6},
+            "offhand": {"name": "quiver", "level": 6},
+            "helmet": {"name": "helmet", "level": 7, "stat_type": "dex"},
+            "chest": {"name": "coat", "level": 8, "stat_type": "dex"},
+            "pants": {"name": "pants", "level": 8, "stat_type": "dex"},
+            "shoes": {"name": "shoes", "level": 8, "stat_type": "dex"},
+            "gloves": {"name": "gloves", "level": 8, "stat_type": "dex"},
+            "amulet": {"name": "hpamulet", "level": 2},
+            "orb": {"name": "orbg", "level": 2},
+            "elixir": {"name": "candypop", "expires": "2024-02-18T12:09:15.725Z", "ex": True},
+            "cape": {"name": "cape", "level": 2, "stat_type": "dex"}
+        })
 
-	if only_signup and existing:
-		return jhtmle(self,"Email already signed up! Please login instead.")
+        create_character(user, class_type="priest", character_name="Healmato", slots={
+            "ring1": {"name": "ringsj", "level": 2},
+            "ring2": {"name": "ringsj", "level": 3},
+            "earring1": None,
+            "earring2": None,
+            "belt": {"name": "hpbelt", "level": 2},
+            "mainhand": {"name": "staff", "level": 7},
+            "offhand": None,
+            "helmet": {"name": "helmet", "level": 7, "stat_type": "int"},
+            "chest": {"name": "coat", "level": 7, "stat_type": "int"},
+            "pants": {"name": "pants", "level": 8, "stat_type": "int", "acc": 6, "ach": "gooped"},
+            "shoes": {"name": "shoes", "level": 7, "stat_type": "int"},
+            "gloves": {"name": "gloves", "level": 8, "stat_type": "int"},
+            "amulet": {"name": "hpamulet", "level": 2},
+            "orb": None,
+            "elixir": {"name": "candypop", "expires": "2024-02-18T12:07:23.398Z", "ex": True},
+            "cape": None
+        })
 
-	def signup_transaction():
-		markedphrase=get_by_iid("markedphrase|%s"%dgt("email",email))
-		if markedphrase: return False
-		salt=randomStr(20)
-		hpassword=hash_password(password,salt)
-		user=User(name="#%s"%signupth,password=hpassword,email=[email],info=cGG(gold=1000,salt=salt))
-		user.referrer=(referrer and "%s"%referrer.k()) or ""
-		user.info.signupth=signupth
-		user.info.email=email
-		user.info.ip=get_ip(self); user.info.country=get_country(self)
-		user.info.characters=[]; user.info.slots=5
-		if domain.electron: user.info.slots=8
-		user.info.items=[]
-		user.info.everification=randomStr(12)
-		auth=get_new_auth(self,user,domain)
-		user.put()
-		mark_phrase(user,"email",email)
-		return user,auth
-	user=ndb.transaction(signup_transaction,xg=True,retries=12)
+        for class_type in classes.keys():
+            create_character(user, class_type, class_type.capitalize() + "_Dev")
 
-	if not user: return jhtmle(self,"Signup Failed")
-	
-	user,auth=user
-	set_cookie(self,"auth","%s-%s"%(user.k(),auth))
-	send_verification_email(domain,user)
-	jhtml(self,[
-		{"type":"success","message":"Signup Complete!" },
-		selection_info(self,user,domain),
-		])
-	add_event(user,"signup",["new","noteworthy"],self=self,info=cGG(message="Signup %s"%(user.info.email)),_async=True)
-	increase_signupth()
+        logging.info("Development account created")
+    else:
+        def login_transaction():
+            user=get_by_iid(existing_user.k('i'))
+            auth=get_new_auth(self,user,domain)
+            user.put()
+            return user,auth
 
-	try:
-		ip=get_ip_info(self)
-		ip.info.limit_signups=gf(ip,"limit_signups",0)+1
-		put_ip_info(ip,user=user)
-	except:
-		log_trace()
+        user, auth = ndb.transaction(login_transaction, xg=True, retries=12)
+
+    if user:
+        set_cookie(self,"auth","%s-%s"%(user.k(),auth))
+        jhtml(self,[
+            {"type":"message","message":"Logged In!" },
+            selection_info(self,user,domain),
+            ])
+    else:
+        jhtmle(self,"Login Failed. Please Retry Later.")
+
+def create_character(user, class_type, character_name, slots = None, additional_items = None):
+    look = 0
+
+    if get_character(character_name, phrase_check=True):
+        return
+
+    simplified_name = simplify_name(character_name)
+
+    # Create character info
+    base = classes[class_type]
+    character_info = GG()
+    character_info.characterth = get_characterth()
+    character_info.name = character_name
+    character_info.gold = 1272156125127212
+    character_info.items = [
+        {"name": "scroll0", "q": 99999},
+        {"name": "scroll1", "q": 99999},
+        {"name": "scroll2", "q": 99999},
+        {"name": "offeringp", "q": 99999},
+        {"name": "offeringx", "q": 99999},
+        {"name": "offering", "q": 99999}
+    ]
+
+    if additional_items:
+        character_info.items.extend(additional_items)
+
+    if slots:
+        character_info.slots = slots
+    else:
+        character_info.slots = copy.deepcopy(base["base_slots"])
+
+    character_info.stats = {}
+    character_info.skin = base["looks"][look][0]
+    character_info.cx = base["looks"][look][1]
+    character_info.map = "main"
+    setattr(character_info, "in", "main")
+    character_info.x, character_info.y = maps["main"]["spawns"][maps["main"].get("on_death", ["main", 0])[1]]
+
+    # Create the character
+    character = Character(
+        name=simplified_name,
+        owner=user.k(),
+        type=class_type,
+        referrer="",
+        info=character_info
+    )
+
+    # Put the character in the database
+    character.put()
+
+    # Update the user's character list and slots
+    if len(user.info.characters) >= gf(user, "slots", 5):
+        user.info.slots = gf(user, "slots", 5) + 1
+        user.cash -= 200
+    user.info.characters.append(character_to_dict(character))
+
+    # Update the user's name if necessary
+    if not user.name or user.name.startswith("#"):
+        user.name = character_name
+
+    # Save the user
+    user.put()
+
+    # Mark the character creation
+    mark_phrase(character, "character", simplified_name)
+
+    # Increase the characterth counter
+    increase_characterth()
 
 def settings_api(**args):
 	self,domain,user,setting,value=gdmuld(args,"self","domain","user","setting","value")
@@ -230,12 +316,12 @@ def servers_and_characters_api(**args):
 
 	characters_data=get_characters(user)
 	characters=characters_to_client(characters_data)
-	
+
 	servers_data=get_servers()
 	servers=servers_to_client(domain,servers_data)
 
 	mail=gf(user_data,"mail",0)
-	
+
 	logging.info("servers_and_characters")
 	jhtml(self,[{"type":"servers_and_characters","servers":servers,"characters":characters,"tutorial":data_to_tutorial(user_data),"code_list":gf(user_data,"code_list",{}),"mail":mail,"rewards":gf(user,"rewards",[])}])
 
@@ -382,7 +468,7 @@ def load_map_api(**args):
 def load_article_api(**args):
 	#logging.info(col)
 	self,domain,user,name,func,tutorial,guide,url=gdmuld(args,"self","domain","user","name","func","tutorial","guide","url")
-	if tutorial: jjson(self,{"type":"article","html":shtml("docs/tutorial/%s.html"%name),"tutorial":tutorial,"url":url}) 
+	if tutorial: jjson(self,{"type":"article","html":shtml("docs/tutorial/%s.html"%name),"tutorial":tutorial,"url":url})
 	elif guide:
 		from docs.directory import docs
 		col=[]; prev=None; next=None; found=False
@@ -404,9 +490,9 @@ def load_article_api(**args):
 				break
 			prev=col[i]
 		#logging.info([prev,next])
-		try: jjson(self,{"type":"article","html":shtml("docs/guide/%s.html"%name),"guide":guide,"url":url,"prev":found and prev,"next":found and next}) 
+		try: jjson(self,{"type":"article","html":shtml("docs/guide/%s.html"%name),"guide":guide,"url":url,"prev":found and prev,"next":found and next})
 		except: jjson(self,{"type":"article","html":shtml("docs/articles/%s.html"%name),"url":url,"prev":found and prev,"next":found and next})
-	elif func: jjson(self,{"type":"article","html":shtml("docs/functions/%s.html"%name),"func":name,"url":url}) 
+	elif func: jjson(self,{"type":"article","html":shtml("docs/functions/%s.html"%name),"func":name,"url":url})
 	else: jjson(self,{"type":"article","html":shtml("docs/articles/%s.html"%name),"url":url})
 	jhtml(self)
 
@@ -580,7 +666,7 @@ def rename_character_api(**args):
 	if character.owner!=user.k(): return jhtmle(self,"You don't own that character.")
 	if is_in_game(character): return jhtmle(self,"Character is in game.")
 	if hsince(gf(character,"last_rename",really_old))<32: return jhtmle(self,"You can rename once every 32 hours!")
-	
+
 	if not nname or not is_name_xallowed(nname): return jhtmle(self,"Invalid name")
 	if get_character(nname,phrase_check=True): return jhtmle(self,"%s is used"%nname)
 
@@ -594,7 +680,7 @@ def rename_character_api(**args):
 	else:
 		if not gf(character,"last_rename",None) and (character.level<60 or hsince(character.created)<72): price=0
 		price=640
-		
+
 	if user.cash<price: return jhtmle(self,"Not enough shells")
 
 	def rename_character_transaction():
@@ -803,7 +889,7 @@ def is_first_api(**args):
 	self,domain,user,server,auth_id=gdmuld(args,"self","domain","user","server","auth_id")
 	if not server: jhtml(self,{"failed":1,"reason":"noserver"}); return
 	if not user: jhtml(self,{"failed":1,"reason":"nouser"}); return
-	
+
 	def first_transaction():
 		markedphrase=get_by_iid("markedphrase|%s"%dgt("auth",auth_id))
 		if markedphrase: return False
@@ -1087,7 +1173,7 @@ def pull_messages_api(**args):
 def log_chat_api(**args):
 	self,domain,server,fro,to,type,message,author=gdmuld(args,"self","domain","server","fro","to","type","message","author")
 	if not server: return jhtml(self,{"failed":1,"reason":"noserver"})
-	
+
 	if type=="server":
 		Message(owner="~%s"%server.k(),author=author,fro=fro,type="server",info=cGG(message=message),server=server.k()).put()
 		Message(owner="~global",author=author,fro=fro,type="server",info=cGG(message=message),server=server.k()).put()
@@ -1307,7 +1393,6 @@ def start_character_api(**args):
 			data["code_version"]=code_version
 		return jhtml(self,data)
 	if is_in_game(character): jhtml(self,{"failed":1,"reason":"ingame"}); return
-	if not is_sdk and ssince(gf(character,"last_start",really_old))<40: jhtml(self,{"failed":1,"reason":"wait_%d_seconds"%(40-ssince(gf(character,"last_start",really_old)))}); return
 	add_event(character,"start",["activity"],self=self,info=cGG(message="%s [LV.%s] logged into %s %s"%(character.info.name,character.level,server.region,server.name),server=server.k('i')),_async=True)
 	if user.guild: guild=get_by_iid_async("guild|%s"%user.guild)
 	def start_character_transaction():
@@ -1738,4 +1823,3 @@ def server_api(name="",extra=""):
 		else: logging.error("no function")
 	safe_commit(user); safe_commit(server); domain_routine(domain)
 	return request.response
-

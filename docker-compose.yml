@@ -8,23 +8,22 @@ services:
     ports:
       - "8083:8083"
       - "8000:8000"
-  eu1:
+  us3:
     image: al
     build:
       context: ./
     restart: always
     ports:
       - "8022:8022"
-    entrypoint: ["/adventureland/node-entrypoint.sh", "EU", "I", "8022"]
+    entrypoint: ["/adventureland/node-entrypoint.sh", "US", "III", "8022"]
+    volumes:
+      - ./js:/adventureland/js
+      - ./node:/adventureland/node
+      - ./scripts:/adventureland/scripts
+      - node_modules:/adventureland/node/node_modules
+      - script_node_modules:/adventureland/scripts/node_modules
     depends_on:
       - adventureland
-  us1:
-    image: al
-    build:
-      context: ./
-    restart: always
-    ports:
-      - "8023:8023"
-    entrypoint: ["/adventureland/node-entrypoint.sh", "US", "I", "8023"]
-    depends_on:
-      - adventureland
+volumes:
+  node_modules:
+  script_node_modules:
